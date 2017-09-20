@@ -1,0 +1,6 @@
+{
+  "mongoose": {
+    "uri": "mongodb://localhost/chat",
+    "keepAlive": true
+  }
+}
