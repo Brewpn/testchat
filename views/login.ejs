@@ -27,6 +27,15 @@
 </form>
 
 <script>
+//    var formData = new FormData(document.forms.login);
+//
+//    formData.append('login-form', 'kek');
+//
+//    var xhr = new XMLHttpRequest();
+//
+//    xhr.open('POST', '/login');
+//    xhr.send(formData);
+
     $(document.forms['login-form']).on('submit', function() {
         var form = $(this);
         $('.error', form).html('');

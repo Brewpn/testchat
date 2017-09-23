@@ -1,10 +1,10 @@
 const express = require('express'),
     app = express(),
-    router = express.Router(),
     path = require('path'),
     favicon = require('serve-favicon'),
     logger = require('morgan'),
-    mongoose = require('./libs/mongoose');
+    mongoose = require('./libs/mongoose'),
+    HttpError = require('./error/index').HttpError;
 
 const cookieParser = require('cookie-parser'),
     bodyParser = require('body-parser'),
@@ -22,11 +22,12 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(require('./middleware/sendHttpError'));
 
 //const users = require('./routes/users');
-const index = require('./routes/index')(app);
+require('./routes/index')(app);
 
-// express-session maybe it'll be better to use
+// express-session
 app.use(session({
     secret: "topSecret",
     key: "sid",
@@ -38,18 +39,13 @@ app.use(session({
     store: new MongoStore({
         mongooseConnection: mongoose.connection,
         adapter: 'connect-mongo'
-    })
+    }),
+    resave: true,
+    saveUninitialized: true
 }));
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Perhaps it's a trash...
-//app.use('/', index);
-//app.use('/users', users);
-
-/* Router exp3
-require('./routes/index')(app);
-*/
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   var err = new Error('Not Found');
@@ -58,14 +54,37 @@ app.use(function(req, res, next) {
 });
 
 // error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+// app.use(function(err, req, res, next) {
+//   // set locals, only providing error in development
+//   res.locals.message = err.message;
+//   res.locals.error = req.app.get('env') === 'development' ? err : {};
+//
+//   // render the error page
+//   res.status(err.status || 500);
+//   res.render('error');
+// });
 
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
+app.use(function(err, req, res, next) {
+    if (typeof err === 'number') {
+        err = new HttpError(err);
+    }
+
+    if (err instanceof HttpError) {
+        res.sendHttpError(err);
+    } else {
+        if (app.get('env') === 'development') {
+            res.locals.message = err.message;
+            res.locals.error = req.app.get('env') === 'development' ? err : {};
+
+            // render the error page
+            res.status(err.status || 500);
+            res.render('error');
+        } else {
+            log.error(err);
+            err = new HttpError(500);
+            res.sendHttpError(err);
+        }
+    }
 });
 
 module.exports = app;

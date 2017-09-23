@@ -1,10 +1,22 @@
-var User = require("./models/user").User,
-    mongoose = require('./libs/mongoose');
+const mongoose = require("./libs/mongoose"),
+    User = require("./models/user").User,
+    async = require('async');
 
-var user  = new User({
-    username: "Kek"
-});
+mongoose.connection.on('open', function () {
+    var db = mongoose.connection.db;
+    db.dropDatabase(function (err) {
+        if (err) throw err;
 
-user.save(function (err, user, affected) {
-    console.log(arguments);
+        async.parallel([
+            function (callback) {
+                var someUser = new User({username: 'someUser', password: 'somePassword'});
+                someUser.save(function (err) {
+                    callback(err, someUser);
+                })
+            }
+        ], function (err, result) {
+            console.log(arguments);
+            mongoose.disconnect();
+        })
+    })
 });
