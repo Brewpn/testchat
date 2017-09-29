@@ -1,14 +1,17 @@
-const express = require('express'),
-    app = express(),
-    path = require('path'),
-    favicon = require('serve-favicon'),
-    logger = require('morgan'),
-    mongoose = require('./libs/mongoose'),
-    HttpError = require('./error/index').HttpError;
+const express = require('express');
+const app = express();
+const path = require('path');
+const favicon = require('serve-favicon');
+const logger = require('morgan');
+const mongoose = require('./libs/mongoose');
+const HttpError = require('./error/index').HttpError;
+const socketIo = require('socket.io');
+var io = socketIo();
+app.io = io;
 
-const cookieParser = require('cookie-parser'),
-    bodyParser = require('body-parser'),
-    session = require('express-session');
+const cookieParser = require('cookie-parser');
+const bodyParser = require('body-parser');
+const session = require('express-session');
 const MongoStore = require('connect-mongo')(session);
 
 // view engine setup
@@ -51,6 +54,16 @@ app.use(function(req, res, next) {
   var err = new Error('Not Found');
   err.status = 404;
   next(err);
+});
+
+// socket.io server code test
+io.sockets.on('connection', function (socket) {
+
+    socket.on('message', function (text, cb) {
+        socket.broadcast.emit('message', text);
+        cb("123");
+    });
+
 });
 
 // error handler
